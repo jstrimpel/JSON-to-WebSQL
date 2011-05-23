@@ -38,18 +38,52 @@ var jsonWebSQL = function(){
 				
 		return openDatabase(json.db_name, json.db_version, _db_desc, _db_size);
 	}
-	
-	
-	
-	
+		
+	var _loadTable = function(json){
+		var _rows = json.data;
+		var _row_count = _rows.length;
+		var _db_name = json.db_name;
+		var _tbl = json.tbl_name;
+		var _open = 'INSERT INTO ' + tbl_name;
+		var _insert_sql = [];
+		
+		for(i=0; i<_row_count; i++){
+			var _columns = _rows[i];
+			var _column_count = _columns.length;
+			var _column_names = [];
+			var _column_values = [];
+			var _column_params = [];
+			var _column_value;
+						
+			for(j=0; j<_column_count; j++){
+				_column_names.push(_columns[j].name);
+				_column_value = _columns[j].value;
+				_column_values.push(((isNaN(_column_value)) ? ('"' + _column_value + '"') : _column_value));			
+			}
+			
+			_column_names = _column_names.join(',');
+			_column_values = _column_values.join(',');			
+			_insert_sql.push(_open + '(' + _column_names +') VALUES (' + _column_values + ')');			
+		}
+		
+		var _db = openDatabase(_db_name);
+		
+		if(_db){
+			_db.transaction(function(tx){
+				var _insert_count = _insert_sql.length;
+				
+				for(i=0; i<_insert_count; i++)
+					tx.executeSql(_insert_sql[i]);				
+			});	
+		}		
+	};			
 	
 	return {
 		create : function(json){
 			_createTable(json);
 		},
-		insert : function(){
-			
-			
+		load : function(json){
+			_loadTable(json);			
 		}				
 	}		
 }();
